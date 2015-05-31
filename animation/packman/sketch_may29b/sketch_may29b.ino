@@ -1,4 +1,5 @@
 #include <LiquidCrystal.h>
+#include <TimerOne.h>
 int zahl = 0;
 int zahl1 = 40;
 int zahl2 = 0;
@@ -65,11 +66,93 @@ void setup() {
   lcd.createChar(5, ghost);
 
   lcd.createChar(7, pac2b);
-  lcd.begin(20, 4);
+  
+  lcd.begin(16, 2);
+  Timer1.initialize(200); // set a timer of length 100000 microseconds (or 0.1 sec - or 10Hz => the led will blink 5 times, 5 cycles of on-and-off, per second)
+  Timer1.attachInterrupt( autoBrightness ); // attach the service routine here
+  
 }
 
+
+boolean busy=false;
+int part = 0;
+int currentReading = 0;
+int lastReading = 0;
+int count = 0;
+void autoBrightness()
+{
+   
+   if(!busy)
+   {
+   currentReading = analogRead(0); 
+   currentReading = 1023-currentReading;
+   }
+   
+   if(count<100)
+   {
+     part = (currentReading/100)*count;
+     count++;
+     busy = true;
+   }
+   else
+   {
+     busy = false;
+     count = 0;
+   }
+   
+   
+   
+   int value = map(part,0,1023,0,255);
+//   Serial.println(value);
+   analogWrite(10,value);
+  
+}
+
+double acc = 0;
+ double lastAcc;
+int tempCount = 0;
+ int count2 = 0;
+boolean tempDisplay = true;
 void loop() {
   zahl2 = 0;
+
+ lcd.setCursor(1,1); 
+ 
+ if(tempDisplay){
+ tempCount++;
+  
+ float temp = analogRead(1);
+ lcd.print("Temp: ");
+ acc += temp * 0.48828125;
+
+ if(tempCount >= 5){
+   acc /=5;
+   lcd.print(acc);
+   lastAcc = acc;
+   acc = 0;
+   tempCount=0; 
+ }
+ else 
+   lcd.print(lastAcc);
+   
+   lcd.print((char)223);
+   lcd.print("C");
+   if(count2++ >= 3){
+     tempDisplay=false;
+   }
+ }
+ else{
+   for(int i=0;i<16;i++)
+     lcd.print(" ");
+   lcd.setCursor(4,1);
+   lcd.print("smjrifle");
+   if(count++ >= 6) {
+     tempDisplay=true;
+    count2 = 0;
+   } 
+ }
+  
+    
   lcd.setCursor(zahl, 0);
 
   while(zahl1 > 0){
